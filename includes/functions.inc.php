@@ -29,11 +29,11 @@ function pwdMatch($password,$repeat){
     return false;
 }
 
-function uidExists($conn, $username, $email){
+function uidExists($conn, $username, $email=''){
     $sql = "SELECT * FROM users WHERE `usersUid` = ? OR `usersemail` = ?;";
     $stmt = mysqli_stmt_init($conn);
     if(!mysqli_stmt_prepare($stmt,$sql)){
-        header('location: ../signup.php?error=stmtfaileduid ');
+        header('location: ../signup.php?error=stmtfailed');
         exit();
     }
     mysqli_stmt_bind_param($stmt, "ss", $username, $email);
@@ -53,12 +53,36 @@ function createUser($conn,$name, $email,$username,$password ){
     $sql = "INSERT INTO users(usersName,usersEmail,usersUid, usersPwd) VALUES (?,?,?,?);";
     $stmt = mysqli_stmt_init($conn);
     if(!mysqli_stmt_prepare($stmt,$sql)){
-        header('location: ../signup.php?error=stmtfailedcreate');
+        header('location: ../signup.php?error=stmtfailed');
         exit();
     }
     mysqli_stmt_bind_param($stmt, "ssss", $username, $email, $username, password_hash($password,PASSWORD_DEFAULT));
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
     header('location: ../login.php?error=none');
-        exit();
+    exit();
+}
+
+
+function emptyInputLogin($uid,$pwd){
+    if( empty($uid) || empty($pwd) ){
+        return true;
+    }
+    return false;
+}
+
+function loginUser($conn, $uid, $pwd){
+    if($row=uidExists($conn,$uid,$uid)){
+        if(password_verify($pwd,$row['usersPwd'])){
+            session_start();
+            $_SESSION['userid']=$row['usersId'];
+            $_SESSION['useruid']=$row['usersUid'];
+            header('location: ../index.php');
+            exit();
+        }
+    header('location: ../login.php?error=wrongcredentials');
+    exit();
+    }
+    header('location: ../login.php?error=wrongcredentials');
+    exit();
 }
